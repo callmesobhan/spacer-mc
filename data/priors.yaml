@@ -1,0 +1,715 @@
+# Evidence table for spacer-mc, version 2.
+#
+# Every row cites a key in refs/references.bib (full records: docs/SOURCES.md).
+# `checked` records how the number was confirmed:
+#   table       read from a table, forest plot or figure of the paper (rendered page checked where noted)
+#   text        read in the body text of the paper
+#   text_match  the number string was found in the full text, but its context was NOT read
+#   abstract    taken from an abstract only; the paper is not in DATA_Articles (see `needs_pdf` at the end)
+# `verified: true` means checked in {table, text}. Anything else is false. Rows are never promoted without reading.
+#
+# Dose metrics are as the papers report them (% of prescription, cc, or % of rectal volume). They are NOT
+# interchangeable. Normalise explicitly in code.
+#
+# role: prior = sampled from; calibrate = used to fit model parameters; holdout = never fitted, only used to test.
+
+version: 2
+last_updated: 2026-10-11
+
+# ================================================================= EBRT: dose
+ebrt_dvh_paired:
+  description: Rectal DVH with vs without spacer, same planning method. The core EBRT calibration target.
+  role: calibrate
+  rows:
+    - id: whalley2016_paired_dvh
+      bib: Whalley2016
+      design: "n=30, each planned without and with hydrogel, 80 Gy in 40 fx; mean separation gain 10.5 mm (central axis)"
+      table: "rectal % volume, without -> with spacer: V30 49.4->42.7; V40 32.0->22.9; V50 22.8->12.4; V60 17.2->7.3; V65 14.7->5.4; V70 12.3->3.7; V75 9.5->2.2; V80 5.3->0.8; V82 1.3->0.2. Mean dose 34->28 Gy; D2cc 81->70 Gy"
+      checked: table   # rendered page 3 and read Table 2
+      verified: true
+      note: "abstract matches this table; the body's V65 13.5% vs 5.3% is a different comparison (against a 110-patient control cohort)"
+    - id: hamstra2017_dvh
+      bib: Hamstra2017
+      design: "pivotal trial final, 222 randomised 2:1, 79.2 Gy in 1.8 Gy fx, IG-IMRT"
+      value: "control vs spacer: V50 21% vs 10% (-54% relative); V70 10% vs 2% (-79%); V80 4% vs 0.1% (-96%)"
+      checked: text
+      verified: true
+    - id: mariados2015_v70
+      bib: Mariados2015
+      design: "same trial, 15-month report"
+      value: "spacer group mean rV70 12.4% (pre-spacer plan) -> 3.3% (post); control 12.4% -> 11.7%; 97.3% of spacer patients had >=25% relative rV70 reduction"
+      checked: text
+      verified: true
+    - id: mariados2015_table2
+      bib: Mariados2015
+      design: "pivotal trial, spacer group (n=148): mean +/- SD of rectal volume %, baseline plan vs post-spacer plan"
+      table: "rV50 25.7 +/- 11.1 -> 12.2 +/- 8.7; rV60 18.4 +/- 7.7 -> 6.8 +/- 5.5; rV70 12.4 +/- 5.4 -> 3.3 +/- 3.2; rV80 4.6 +/- 3.1 -> 0.6 +/- 0.9. Absolute reduction 13.4 / 11.6 / 9.1 / 3.9 points; relative 52.3 / 62.9 / 73.3 / 86.3% (all p<.0001)"
+      checked: table   # rendered page 5; text extraction had dropped this table
+      verified: true
+      finding: "First-hand patient-level SDs for the pivotal trial. The relative reduction RISES with dose (52% at V50 to 86% at V80), which a model with a steep penumbra reproduces and a pure scaling model does not. SD falls roughly in proportion to the mean (V70: 5.4 -> 3.2), so the spread is not constant."
+    - id: fischervaluck2017_paired
+      bib: FischerValuck2017
+      design: "149 spacer patients from the pivotal trial, plans before and after spacer, same method, 79.2 Gy"
+      value: "absolute reduction at rV50/60/70/80: 13.4 / 11.6 / 9.1 / 3.9 percentage points; relative 52.4 / 63.5 / 73.5 / 71.6%"
+      checked: text
+      verified: true
+    - id: song2013_paired_dvh
+      bib: Song2013
+      design: "prospective phase II pilot, 4 institutions, 52 enrolled, 48 injected, 45 with paired IMRT plans before and after injection (72-78 Gy)"
+      table: "rectal volume %, mean (SD), before -> after: V75 5.5 (3.2) -> 1.2 (1.3); V70 13.0 (6.2) -> 5.1 (4.2); V65 17.9 (8.4) -> 8.8 (7.0); V55 26.3 (11.8) -> 16.4 (12.1); V45 36.3 (15.6) -> 27.0 (17.8); V35 48.3 (17.5) -> 39.6 (20.0); V25 60.8 (15.0) -> 53.3 (17.9); V15 76.3 (10.6) -> 69.9 (12.2); V10 81.5 (10.3) -> 77.4 (11.4); all p<=0.02. Mean V70 reduction 8.0 points (SD 4.2), median 7.8 (-0.3 to 19.5). V70 down >=25% in 44/46 (95.7%); the two failures were +4% and +39% (the latter with the prostate contour overlapping gel)"
+      checked: table
+      verified: true
+      discrepancy: "the abstract says a V70 reduction of '8.0 Gy'; the results give 8.0 percentage points"
+      finding: "Patient-level SDs across the whole dose range. Benefit concentrated at 45-75 Gy, small but significant at 10-25 Gy. Pre- and post-injection V70 differed by centre (p=0.002, 0.001) but the REDUCTION did not (p=0.31): baselines are centre-dependent, the effect is not. Within the spacer arm the V70 reduction was unrelated to gel volume, mid-gland thickness, mean thickness, symmetry or length of PTV-gel contact; it was associated with the change in plan conformity (coefficient -7.59, p=0.013), i.e. planner behaviour."
+
+ebrt_tail_and_symmetry:
+  description: What happens in poorly placed spacers. Calibration target for the model's tail, and a source for the placement model.
+  role: calibrate
+  rows:
+    - id: fischervaluck2017_tail
+      bib: FischerValuck2017
+      value: "4/149 (2.7%) did not reach a 25% relative rV70 reduction; 3 patients had a WORSE rV70 with the spacer (absolute -27.6%, -3.2% in Sym 4; -37.7% in Sym 5)"
+      checked: text
+      verified: true
+    - id: fischervaluck2017_symmetry
+      bib: FischerValuck2017
+      value: "patient-level symmetry score 1-5: 73 (49.0%), 26 (17.4%), 20 (13.4%), 28 (18.8%), 2 (1.3%); hydrogel present at both apex and base in 48 (32%); rectal wall infiltration 9 (6.0%)"
+      checked: text
+      verified: true
+      discrepancy: "the abstract says 71 (47.7%) symmetric at midgland and 1 cm above/below; the results say 73 (49.0%). Use the results, note the mismatch."
+
+ebrt_between_study_effects:
+  description: Per-study V70 differences (spacer minus control, percentage points). Random-effects and leave-one-study-out data.
+  role: calibrate
+  rows:
+    - id: miller2020_forest
+      bib: Miller2020
+      table: "mean difference (SE): Chao 2019 -1.1 (0.33); Mariados 2015 -8.4 (0.58); Pinkawa 2017 -10.0 (1.21); te Velde 2019 -5.3 (1.26); Whalley 2016 -8.2 (2.87); Wolf 2015 -6.7 (2.53); pooled -6.51 (-10.51 to -2.51); tau^2 22.37, I^2 97%"
+      pooled_levels: "V70 3.5% with spacer vs 10.4% control"
+      checked: table   # rendered page 6 and read Figure 1
+      verified: true
+      data:   # mean difference in rectal V70 (spacer minus control), percentage points, with SE; read from Figure 1
+        - {study: "Chao 2019", md: -1.10, se: 0.33, metric: "HDR fraction, V70 as % of prescription (see chao2019_v70_units)"}
+        - {study: "Mariados 2015", md: -8.40, se: 0.58, metric: "EBRT V70 Gy"}
+        - {study: "Pinkawa 2017", md: -10.00, se: 1.21, metric: "EBRT V70 Gy"}
+        - {study: "te Velde 2019", md: -5.30, se: 1.26, metric: "EBRT V70 Gy (assumed)"}
+        - {study: "Whalley 2016", md: -8.20, se: 2.87, metric: "EBRT V70 Gy"}
+        - {study: "Wolf 2015", md: -6.70, se: 2.53, metric: "EBRT V70 Gy (assumed)"}
+      caveat: "te Velde 2019 and Wolf 2015 are not in DATA_Articles (metric assumed)"
+    - id: chao2019_v70_units
+      bib: Chao2019
+      table: "HDR (16 Gy in 2 fx, or 18 Gy in 3 fx) plus 50.4 Gy IMRT. Median rectal V70, % of rectum: 1.10 without a spacer, 0.00 with one (Table 3). The paper's own rectal constraint is RTOG 0321 'V75 < 1 cc', which is a percent-of-prescription HDR constraint"
+      checked: table
+      verified: true
+      finding: >
+        This matches Miller's Chao entry (-1.1) exactly, so Miller's pooled V70 very probably mixes one HDR
+        percent-of-prescription value with five EBRT Gy values. The paper does not state the units of V30-V80 in Table 3,
+        so this is an inference, not a quote.
+    - id: reanalysis_without_chao
+      derived: true
+      method: "DerSimonian-Laird random effects on the six forest-plot values (tests/test_meta.py reproduces Miller's published result)"
+      value: "all six, reproducing Miller: pooled -6.51 (95% CI -10.51 to -2.51), tau^2 22.37, Q 159.4, I^2 97%. Five EBRT studies without Chao: pooled -7.90 (95% CI -9.58 to -6.23), tau^2 1.63, I^2 50%"
+      note: "Nearly all the 97% heterogeneity comes from the one HDR-metric study. Between-study heterogeneity in EBRT is moderate (tau about 1.3 percentage points) but the five EBRT values are at different thresholds (see miller2020_metric_mix), so treat -7.9 as approximate."
+    - id: miller2020_metric_mix
+      bib: Miller2020
+      table: "Methods: rectal irradiation was taken as V70 where reported; where it was not, the reported value closest to V70 was used. Table 1: Chao 2019 = HDR brachytherapy (18 Gy/3 fx or 16 Gy/2 fx) plus IMRT 50.4 Gy, so no EBRT V70 exists for it; te Velde 2019 = IMRT 81 Gy/45 fx; Wolf 2015 = IMRT 75.85 Gy/41 fx; Whalley 2016 = 80 Gy/40 fx; Mariados 2015 = 79.2 Gy/44 fx; Pinkawa 2017 = 76-80 Gy"
+      checked: table
+      verified: true
+      finding: "Confirms the Chao inference: Miller's Chao entry is the HDR value closest to V70, not an EBRT V70. te Velde and Wolf are genuine EBRT studies."
+    - id: armstrong2021_table2
+      bib: Armstrong2021
+      design: "Table 2 of a systematic review, rectal dosimetry of comparative non-randomised studies; units % of rectal volume unless stated. Secondary compilation: values as Armstrong reports them"
+      table: "EBRT, spacer vs none: Pinkawa 2017 V70 20 vs 32, V90 4 vs 13; te Velde 2019 V40 25.9 vs 33.3, V65 5.2 vs 12.6, V75 2.1 vs 7.4 (all p<.0001); Whalley 2016 V40 22.9 vs 32, V65 5.3 vs 13.5; SBRT Fried 2017 D10 26.66 vs 30.44 Gy, D50 10.9 vs 11.4 Gy (p=.47). HDR: Wu 2018 V75 <0.005 vs 0.12 cc, V80 <0.005 vs 0.01 cc, V40 8.11 vs 9.38% (p=.16); Saigal 2019 (HDR + EBRT) D1 35.3 vs 54.6 Gy (p<.05), D90 100.1 vs 101.3; Baghwala 2019 V75 0.02 vs 0.7 cc. LDR: Morita 2020 V100 0.026 vs 0.318 cc, V150 0.001 vs 0.025 cc; Patel 2018 V50 0.53 vs 4.21 cc, V100 0.0001 vs 0.25 cc; Taggar 2018 V100 0.01 vs 0.07 cc; Liu 2020 post- minus intra-operative D2 -25.1 Gy (spacer) vs +5 Gy (none), D0.1 -65.7 vs -13 Gy"
+      checked: table   # rendered page 6 and read
+      verified: true
+      secondary: true
+      finding: "te Velde's entry in Miller (-5.3) is its V75 (7.4 -> 2.1); Whalley's (-8.2) is its V65 against the 110-patient control cohort (13.5 -> 5.3). Pinkawa's -10.0 matches neither Armstrong's V70 (-12) nor V90 (-9); unresolved."
+    - id: kwon2026_relative_v70
+      bib: Kwon2026
+      design: "35-study meta-analysis (4,664 men), random effects. Forest plots read from rendered page 10. Secondary: means as extracted by Kwon. Pools mix mL and %, EBRT and brachytherapy, hence I^2 95-99%"
+      table: "rectal V70, spacer vs none, mean (SD, n). In mL: Cousins 2022 9.69 (2.02, 30) vs 20.17 (4.14, 30), reduction 52%; Khalil 2022 5.32 (3.13, 15) vs 14.49 (5.35, 8), 63%; Navaratnam 2020 1 (1.1, 51) vs 4 (2.2, 21), 75%; Pinkawa 2017 5 (6.5, 54) vs 16 (9.1, 60), 69%; Yang 2020 0.3 (0.1, 16) vs 0.4 (0.15, 35), 25%. In %: Cousins 2022 15 (1.02, 30) vs 30 (2.04, 30), 50%; Hamstra 2018 2 (3.66, 149) vs 10 (6.83, 73), 80%; Sagayanathan 2024 7 (5.78, 80) vs 10.2 (5.7, 82), 31%. Pooled V70 mL -6.56 (-10.72 to -2.40), I^2 98%; V70 % -8.76 (-16.13 to -1.39), I^2 99%; V50 mL -9.34, V50 % -15.66"
+      checked: table
+      verified: true
+      secondary: true
+      finding: "Relative V70 reduction, which does not depend on the volume units, ranges from 25% to 80% across studies. The Hamstra 'SDs' (V70 3.66 and 6.83; V50 12.21 and 12.79) are not reported values: they equal exactly 0.30, 0.80, 1.00 and 1.50 times sqrt(n) (n=149 and 73), i.e. standard errors read off a chart and converted. Hamstra 2017's Figure 1A plots mean +/- SEM. Do not use them; Mariados 2015 Table 2 and Song 2013 give real patient-level SDs. Cousins 2022's SDs look implausibly tight (1.02, 2.04) and should not be trusted."
+    - id: kwon2026_data_quality
+      bib: Kwon2026
+      finding: "Kwon's rectal V100 (mL) forest plot lists 'te Velde et al. 2017' as 0.01 (SD 0.05) vs 0.07 (SD 0.19), n=65 vs 60. Those are exactly Taggar 2018's Table 2 values (0.01 [0.05] vs 0.07 [0.19]), and Miller gives te Velde 65 vs 56 patients. Probable extraction error; unconfirmed without the te Velde 2017 paper. The plot also pools LDR V100 with EBRT V100."
+      checked: table
+      verified: true
+
+# ================================================================= EBRT: dose as a function of separation
+ebrt_separation_to_dose:
+  description: "How rectal V70 falls with prostate-rectum separation, using the same approach as the model: shift the rectum against a fixed dose cloud."
+  role: calibrate
+  rows:
+    - id: susil2010_separation_curve
+      bib: Susil2010
+      design: "nine clinically generated and delivered IMRT plans (78 Gy); the rectum was 'carved away' from the prostate and seminal vesicles by 5, 10 and 15 mm WITHOUT reoptimisation, a pure shift of the rectum relative to a fixed dose cloud"
+      table: "mean rectal V70 23.0% (baseline) -> 15.1% (5 mm), 3.7% (10 mm), 0.0% (15 mm); relative reduction 33.5%, 83.1%, 100% (all p<0.05). No additional reduction beyond 15 mm"
+      checked: text   # read on the PMC page in the browser
+      verified: true
+      finding: "First calibration target for M2: V70 as a saturating function of separation. About a third is gone at 5 mm and five sixths at 10 mm. At 10-12.5 mm the relative reductions across studies agree: 83% (Susil simulation, 10 mm), 80% (Susil cadaver, 12.5 mm), 73% (Mariados, 12.6 mm), 79% (Hamstra), 70% (Whalley, 10.5 mm), 61% (Song, mean 9.7 mm gain)."
+    - id: susil2010_cadaver
+      bib: Susil2010
+      design: "cadavers, 20 mL hydrogel, 5 pre-spacer and 5 post-spacer IMRT plans (78 Gy)"
+      value: "mean separation 12.5 mm; mean rectal V70 19.9% -> 4.5% (relative -79.9%, 95% CI 61.0 to 98.8%); one specimen V70 14.9% -> 0.5% and PTV V78 95% -> 97%; most of the reduction between 40 and 70 Gy, little below 30 Gy. Endorectal balloon distension 57 -> 84 -> 118 cm3: volume inside the 70 Gy region 10.3 -> 18.7 -> 29.9 cm3 without a spacer, 0.0 -> 2.9 -> 12.2 cm3 with one. A 15 mm posterior PTV margin still gave V70 11.1% with a spacer. DuraSeal swelling 45.2% (SD 3.0) unirradiated vs 42.6% (3.4) after 150 Gy, no new degradation products"
+      checked: text
+      verified: true
+      caveat: "cadaveric: no motion, perfusion or oedema; 5+5 plans"
+      finding: "A spacer also reduces SENSITIVITY to rectal volume change (the V70-region volume rose 19.6 cm3 without a spacer and 12.2 with one over the same distension), which is the robustness question this repo asks."
+
+# ================================================================= spacer geometry
+spacer_separation:
+  description: Prostate-rectum separation. Mean, spread and cranio-caudal profile.
+  role: prior
+  rows:
+    - id: mariados2015_sep
+      bib: Mariados2015
+      value: "perirectal distance, spacer group at post-injection planning scan 12.6 +/- 3.9 mm (baseline 1.6 +/- 2.2 mm); control group 1.6 +/- 2.0 mm; placement success 98.7-99%"
+      checked: text
+      verified: true
+    - id: miller2020_sep
+      bib: Miller2020
+      value: "weighted mean separation after spacer 11.2 mm (95% CI 10.1-12.3), 5 studies; placement success 97.0% (94.4-98.8)"
+      checked: text
+      verified: true
+    - id: pinkawa2013_profile
+      bib: Pinkawa2013
+      value: "prostate to anterior rectal wall, base/middle/apex: with spacer (n=15) 1.6 (SD 0.6) / 1.2 (0.2) / 1.0 (0.4) cm; without (n=30) 0.9 (1.1) / 0.3 (0.3) / 0.2 (0.1) cm"
+      checked: text
+      verified: true
+    - id: teyateeti2022_sep
+      bib: Teyateeti2022
+      value: "LDR cohort, median separation 11.8 mm (range 1.6-20.8)"
+      checked: text
+      verified: true
+    - id: choi2026_morphology
+      bib: Choi2026
+      value: "n=149 LDR, day-30 MRI, median (IQR): midgland thickness 12.0 mm (9.5-14.0); at 1 cm: apex 11.0 (7.0-13.0), base 12.0 (10.0-14.0), left 10.0 (6.5-12.0), right 10.0 (7.0-13.0). Apex thickness < 5 mm in 20%; apex volume >= 5 mL in only 45%. Apparent volume median 15.5 mL vs 10 mL injected"
+      checked: text
+      verified: true
+      note: "MRI volume is the T2-bright compartment (gel, saline, oedema), not injected volume"
+    - id: hwang2019_sep
+      bib: Hwang2019
+      value: "9.6 +/- 4 mm at mid-gland (SBRT, n=50)"
+      checked: text_match
+      verified: false
+    - id: lin2021_sep
+      bib: Lin2021
+      value: "9.9 mm (SD 2.8) in the IJROBP abstract; median 10 mm (IQR 8-11.5) in the JCB paper (this file)"
+      checked: text_match
+      verified: false
+    - id: song2013_geometry
+      bib: Song2013
+      design: "n=48 injected into the prostate-rectal interface (4 of 52 failed before brachytherapy-style technique was adopted)"
+      table: "gel thickness mean (SD) mm: base 8.0 (6.9), mid-gland 10.0 (4.4), apex 6.7 (5.6); average 8.1 (4.2). Prostate to inner rectal wall distance before -> after, mm: base 9.8 (6.6) -> 18.4 (7.2); mid-gland 5.8 (3.7) -> 15.5 (5.8); apex 5.9 (3.0) -> 12.6 (5.8). Functional success (>=7.5 mm at mid-gland) 95.8% (46/48); mid-gland gel thickness >5 mm in 91.7%. Operators needed 4-5 procedures to become proficient, fewer with brachytherapy experience"
+      checked: table
+      verified: true
+      note: "baseline mid-gland gap 5.8 mm here vs 1.6 mm in Mariados: the baseline gap is itself centre- and measurement-dependent"
+    - id: hwang2018_geometry
+      bib: Hwang2018
+      design: "n=20, SpaceOAR, SBRT; CT simulation (3 axial slices) and MRI before (n=13) and after (n=18)"
+      value: "perirectal distance on CT: midgland midline 9.1 +/- 4.3 mm; superior-most slice 14.7 +/- 10.3 mm; inferior-most slice 6.4 +/- 4.5 mm; per-patient average 10.1 +/- 7.4 mm. MRI before the spacer at midgland midline 1.0 mm, after 10.3 mm; mean gain at midline midgland 10 mm, falling beyond 1 cm lateral. Gel volume 10.3 +/- 4.5 cc. Gel absent in 9 of 60 axial slices (4 inferior, 2 mid, 3 superior); present and symmetric in all three slices in 10/20 (50%)"
+      checked: text
+      verified: true
+  model_note: >
+    The gap has a clear base > mid > apex profile, spread is largest at the apex and base, and asymmetry is common.
+    Model thickness along the cranio-caudal axis with left-right asymmetry, not a single scalar.
+
+# ================================================================= kinetics
+spacer_kinetics:
+  description: How separation changes with time. Flat for about 10-12 weeks, then a steep loss.
+  role: prior
+  rows:
+    - id: mariados2015_time
+      bib: Mariados2015
+      value: "separation: 12.6 +/- 3.9 mm after spacer; 9.0 +/- 5.9 mm at 3 months (+/- 1 wk); 10.9 +/- 5.8 mm if imaged the week BEFORE the 3-month date vs 6.8 +/- 5.4 mm the week AFTER; absorbed at 12 months (3 patients, 2%, small remnant cysts)"
+      checked: text
+      verified: true
+      note: "a ~4 mm fall within about two weeks around month 3: a sharp transition, not gradual loss"
+    - id: pinkawa2013_stable
+      bib: Pinkawa2013
+      value: "n=15, scans before treatment and in the last treatment week (10-12 wk after injection): gel volume +17% (p<0.01), centre-of-mass shift 0.6 / 0.6 / 1.4 mm; prostate-rectal-wall distance base/mid/apex 1.6->1.5, 1.2->1.3, 1.0->1.1 cm"
+      checked: text
+      verified: true
+    - id: butler2021_timing
+      bib: Butler2021
+      value: "cites the pivotal trial: 12-week MRI showed only modest absorption, patients imaged one week later markedly reduced separation. Pd-103 delivers 90% of dose in 56 d; I-125 in 200 d"
+      checked: text
+      verified: true
+    - id: fischervaluck2017_hydrolysis
+      bib: FischerValuck2017
+      value: "background statement, no measurement: the gel begins to hydrolyze after about 3 months and is then cleared renally"
+      checked: text
+      verified: true
+    - id: choi2026_swelling
+      bib: Choi2026
+      value: "cites Hama & Tate: SpaceOAR apparent volume up to ~20% larger in the weeks after implantation (water uptake); this paper's own series did not image early dynamics"
+      checked: text
+      verified: true
+      note: "secondhand for the 20% figure"
+    - id: bjoreland2023_ha
+      bib: Bjoreland2023
+      design: "HA spacer (Macrolane VRF 30), n=81 enrolled, 52 evaluable for dosimetry/spacer, 78 Gy in 39 fx (97% 3DCRT). Scans: MR0 before HA, MR1 median 1 day after, MR2 mid-RT, MR3 end of RT (example patient: 30 and 63 days after HA)"
+      value: "mean injected 16 +/- 4 cm3 to reach >=10 mm; MRI volume 15% below injected. HA thickness -28% (MR2) and -32% (MR3) vs MR1 at mid-gland, with no significant difference between MR2 and MR3 (a fast early fall, then a plateau). CTV-rectum space +114% MR0->MR1, then -19% / -17% vs MR1. CTV-rectum space >10 mm at all three levels: 67% (MR1), 44% (MR2), 50% (MR3); 12% without HA by anatomy alone"
+      checked: text
+      verified: true
+    - id: bjoreland2023_dose_decay
+      bib: Bjoreland2023
+      value: "rectal V70% / V90% (of 78 Gy) reduction vs no spacer: 56% / 69% at MR1; 31% / 30% at MR2; 31% / 34% at MR3. V90% < 15% met in 96% (MR1), 90% (MR2, MR3), 88% without HA. Doses for MR2/MR3 recalculated on the MR1 plan with the same fiducial shifts, so this is spacer change alone, not motion"
+      checked: text
+      verified: true
+      finding: "For HA the dose benefit measured on the planning scan is roughly double what is delivered from mid-treatment on."
+    - id: uhl2014_time
+      bib: Uhl2014
+      design: "phase II, PEG SpaceOAR (mostly 10 mL, 10-30 mL in early patients), IMRT 78 Gy in 2 Gy fx over 8 weeks; n=52 (47 per-protocol)"
+      value: "mean prostate-rectum distance at mid-gland: 9.7 +/- 5.5 mm after injection; 10.5 +/- 5.3 mm after completing IMRT (about 8 weeks later); 2.9 +/- 4.2 mm three months after IMRT (about 5 months after injection), 'reflecting hydrogel absorption'. MRI at 6 months after IMRT (n=44): completely absorbed in every case except a small remnant in one (2.3%). Dosimetry (cited from Song 2013): space >= 7.5 mm in 95.8%, rV70 reduced >= 25% in 95.7%"
+      checked: text
+      verified: true
+      finding: "With Mariados 2015 this gives the PEG time course: stable ~8-12 weeks, steep fall around months 3-5, back to baseline by ~5 months and gone from MRI by ~9-12 months."
+    - id: vaggers2021_separation_vs_gel
+      bib: Vaggers2021
+      value: "systematic review of PEG spacers in brachytherapy (9 studies, 671 patients and 537 controls; 4 DuraSeal, 5 SpaceOAR): separation 7.7-16 mm; rectal D2cc reduced 21.6-52.6%; median rectal V75% cc reduced 91.8-100%. DuraSeal breaks down in 4-6 weeks vs 3-6 months for SpaceOAR. In one 10-patient LDR series with DuraSeal (Heikkila 2014, cited here, not read) gel VOLUME cleared with a half-life of 47 days but rectal SEPARATION had a half-life of 110 days 'due to oedema'. The same series: rectal D2cc 95 +/- 13 Gy before gel to 64 +/- 13 Gy after"
+      checked: text
+      verified: true
+      secondary: "Heikkila 2014 figures are quoted second-hand; primary paper is in needs_pdf"
+      finding: "Separation and gel volume decay at different rates because oedema persists. Model separation, not gel volume."
+    - id: wong2025_duration_claim
+      bib: Wong2025
+      value: "background statement: both commercial spacers (PEG SpaceOAR, HA Barrigel) keep their separation for about three to six months and then biodegrade gradually"
+      checked: text
+      verified: true
+      note: "a statement with a citation, not a measurement; consistent with Mariados and Uhl for PEG, but Bjoreland 2023 shows HA thickness already down ~30% at one month"
+    - id: song2013_time
+      bib: Song2013
+      value: "separation at the end of radiotherapy was not significantly different from post-injection (p=0.19 base, 0.06 mid-gland, 0.14 apex). MRI 6 months after RT: traces of gel in one patient (who had a 10 cc injection), complete absorption in all others"
+      checked: text
+      verified: true
+    - id: kubo2021_kinetics
+      bib: Kubo2021
+      design: "4 patients, I-125 LDR (110 Gy) with SpaceOAR injected after the seeds, then 45 Gy EBRT in 1.8 Gy fx starting 47-68 days later; MRI the day after implant, at EBRT planning, and during EBRT (day 74-99 after implant)"
+      value: "gel volume per patient, baseline / planning / during EBRT, cc: 15.0 / 14.4 / 11.4 (day 76); 17.4 / 12.9 / 2.0 (day 93); 10.9 / 9.4 / 7.1 (day 74); 17.7 / 15.8 / 11.4 (day 83) / 4.5 (day 99). Separation, mm: 22.1 / 19.9 / 20.7; 11.4 / 6.5 / 0.6; 14.5 / 13.6 / 11.8; 15.0 / 15.0 / 10.5 (day 83) / 4.1 (day 99). Medians: volume 16.2 (10.9-17.7) -> 14.4 (9.4-16.1) -> 7.1 (2.0-11.4) cc; separation 14.8 (11.4-22.1) -> 14.3 (6.5-19.9) -> 10.5 (0.6-20.7) mm. Median rectal-wall (4 mm) volume receiving 80/70/60% of 45 Gy: 1.5 / 2.0 / 3.2 cc at planning -> 3.2 / 4.1 / 5.0 cc during EBRT (p<0.05); case 2: V70 7.0 -> 10.1 cc as the spacer vanished"
+      checked: text
+      verified: true
+      caveat: "n=4, high-risk disease, EBRT after LDR; no data before day 47"
+      finding: "Loss starts around day 74-99 (weeks 11-14) with large timing differences between patients: two of four had lost most separation by day 93-99, two had not (20.7 mm at day 76, 11.8 mm at day 74). Onset is a distribution, not a date; the median rectal dose roughly doubles when it goes."
+  abstract_only:
+    - {id: koduri2026, material: PEG, value: "n=198 MR-Linac SBRT: no meaningful resorption over 5 fx; apparent volume +10.62% (95% CI 8.68-12.56)", checked: abstract, verified: false}
+    - {id: brenneman2021, material: PEG-iodinated, value: "spacing maintained through 5/28/44 fx by CBCT", checked: abstract, verified: false}
+  model_note: >
+    Phase 1 (to ~10-12 wk): near-flat, with apparent swelling of +10 to +20% in volume (not the same as thickness).
+    Phase 2 (about week 12-14): steep loss of separation. Phase 3 (to ~12 months): absorbed.
+    HA shrinks within 39 fx and PEG does not, so the material is a model input. Uhl 2014 fixes the PEG tail: ~10 mm
+    at end of an 8-week course, ~3 mm (about baseline) at ~5 months, gone on MRI by ~9-12 months. Track rectal
+    SEPARATION, not gel volume: with DuraSeal in LDR, volume half-life was 47 d but separation half-life 110 d (oedema).
+  isotopes:
+    description: Half-lives, energies and prescriptions for permanent-implant isotopes
+    rows:
+      - id: king2021_isotopes
+        bib: King2021
+        table: "half-life (d) / average energy (keV) / monotherapy dose (Gy) / combination brachytherapy dose (Gy) / typical seed strength (U): I-125 59.4 / 28.4 / 144-145 / 108-110 / 0.4-0.8; Pd-103 17.0 / 20.7 / 125 / 90-100 / 1.5-3.0; Cs-131 9.7 / 30.4 / 115 / 85 / 1.6-2.5. EBRT with combination 41.4-50.4 Gy"
+        checked: table   # rendered page 3 and read Table 1
+        verified: true
+      - id: henry2022_isotope_rx
+        bib: Henry2022
+        table: "I-125 monotherapy prescription 145 Gy to the CTV; boost after 45-50 Gy EBRT 110 Gy; HDR boost 15 Gy"
+        checked: table
+        verified: true
+  isotope_timing:
+    description: Share of total dose delivered by time t, decay only. Derived from the half-lives above, not from a paper.
+    derived: "fraction = 1 - 2^(-t / T_half), using King 2021 half-lives (I-125 59.4 d, Pd-103 17.0 d, Cs-131 9.7 d)"
+    values: "I-125 at 30/60/90/120/200 d: 29.5% / 50.3% / 65.0% / 75.3% / 90.3%. Pd-103 at 90 d: 97.4%. Cs-131 at 90 d: 99.8%"
+    cross_check: "Butler 2021 states 90% of dose in 56 d for Pd-103 and ~200 d for I-125; both agree with the half-lives (3.32 half-lives each)"
+    discrepancy: "Choi 2026 states >80% of the LDR seed dose is delivered within 3 months. That holds for Pd-103 and Cs-131 but not for I-125 (65% at 90 d; 80% at ~138 d). Choi's cohort used I-125."
+
+# ================================================================= LDR dose
+ldr_dose:
+  description: LDR rectal dose with and without spacer. Cohorts differ in isotope, prescription and technique.
+  role: calibrate
+  units: "% of prescription dose unless stated"
+  rows:
+    - id: teyateeti2022_ldr
+      bib: Teyateeti2022
+      design: "n=224 spacer vs 139 none (MSKCC); 311/363 Pd-103, 52 I-125; 171 monotherapy, 192 combined with EBRT"
+      table: "median (range): rectal D1cc 24.1 (7.9-82.2) vs 58.8 (16.3-99.5); D2cc 19.9 (6.2-62.5) vs 47.0 (12.8-80.0); V100 0.0 cc both. Late rectal toxicity any grade 12% vs 31%, grade>=2 1.8% vs 5.8%"
+      checked: table
+      verified: true
+    - id: choi2026_ldr
+      bib: Choi2026
+      design: "n=149, I-125, prescription 145 Gy, stranded seeds, spacer immediately after implant"
+      table: "median rectal D1cc 92.4% (IQR 88.6-94.9) before spacer -> 53.4% (44.4-63.3) at day 30; each +1 on the 10-point variation score = -5.4 Gy D1cc (95% CI 3.4-7.4), R^2 = 0.166"
+      checked: table
+      verified: true
+      caveat: "plans anticipated the spacer (79% met rectal V145 < 1 mL before it, 100% after), so the pre-spacer value is not a clean no-spacer counterfactual. R^2 = 0.17: morphology explains little of the dose spread"
+    - id: haddad2023_ldr_time
+      bib: Haddad2023
+      design: "102 LDR patients (145 Gy) without spacer, relative dose at different intervals; 105 HDR patients with spacer"
+      table: "rectum D2cm3 (mean +/- SD): LDR day 1 77 +/- 18%, day 30 88 +/- 20-21%; HDR with spacer 53 +/- 9% (column order inferred from the text)"
+      checked: table
+      verified: true
+      note: "rectal D2cc rises ~14% (relative) from day 1 to day 30 in LDR WITHOUT any spacer. The authors attribute day-1 vs day-30 differences to changing prostate oedema displacing the sources (citing earlier work; not measured here). The paper prints SD 20 in the table and 21 in the text."
+    - id: taggar2018_ldr
+      bib: Taggar2018
+      design: "Pd-103 LDR, spacer injected after the implant in the same session. Spacer n=74 (74/79 placed, 93.7%) vs historical n=136 (109 Pd-103, 26 I-125). Day-0 CT dosimetry, % of each prescribed dose (monotherapy, combination or salvage)"
+      table: "separation median 11.2 mm (range 1.6-16.7), mean 11.2 (SD 3.3). Mean (SD) with vs without: rectal D1cc 25.27 (12.67)% vs 52.74 (18.76)%; D2cc 20.47 (9.93)% vs 43.16 (15.70)%; V100 0.01 (0.05) vs 0.07 (0.19) cc. Prostate V150 70.0 vs 65.6%, V200 47.8 vs 41.5% (higher with spacer; spacer cohort had smaller prostates, 29.3 vs 34.5 cc). Share meeting the rectal V100 criterion: 96% vs 66%"
+      checked: table
+      verified: true
+      discrepancy: "The text gives the rectal criterion as V100 < 1.0 cc, yet Table 2 shows a non-spacer mean V100 of 0.07 cc (SD 0.19), which would let nearly every non-spacer patient meet a 1.0 cc limit, not 66%. A threshold nearer 0.1 cc would fit the table. The printed threshold looks inconsistent; unresolved."
+    - id: taggar2018_seed_shift
+      bib: Taggar2018
+      design: "10 patients, cone-beam CT immediately before and after the spacer, patient not moved"
+      table: "mean seed shift relative to the urethra (SD): left-right +0.27 (0.13) mm, anterior-posterior -0.39 (0.19) mm, distance -0.14 (0.18) mm (p = 0.073); urethral Dmax +4.34% (SD 8.01, range -0.17 to +23.49)"
+      checked: table
+      verified: true
+      finding: "A spacer injected after the implant moves seeds by under 0.5 mm, so treating it as a pure shift of the rectum (seeds fixed to the prostate) is supported. Seeds within 3 mm of the urethra can change its dose by >20%."
+    - id: lin2021_ldr
+      bib: Lin2021
+      value: "I-125, spacer vs none: D1cc 52.4% vs 84.2%; D2cc 45.7% vs 70.0%; RV100 median 0.0 vs 0.4 cc"
+      checked: text_match
+      verified: false
+  abstract_only:
+    - {id: kahn2020, isotope: I-125, value: "separation 13.9 vs 6.5 mm; adjusted mean D1cc/D2cc/D5cc reduced 32/26/17%", checked: abstract, verified: false}
+    - {id: agrawal2026, value: "separation none/HA/PEG/balloon 1.8/9.2/10.5/15.5 mm; D2cc 40.8/20.5/24.1/11.8%; D1cc 55.2/25.4/33.0/13.8%", checked: abstract, verified: false}
+    - {id: morita2020, isotope: I-125, value: "displacement 11.64 mm; RV100 0.026 vs 0.318 cc; prostate diameters increased in all directions after the spacer", checked: abstract, verified: false}
+    - {id: nehlsen2020, value: "separation 7.5 mm; V100 rectum 0.09 vs 0.17 cc", checked: abstract, verified: false}
+    - {id: butler2021_dose, bib: Butler2021, value: "Pd-103: PTV D90 121.1% with hydrogel vs 123.3% without", checked: text_match}
+  secondary_rows:
+    - id: kwon2026_ldr_v100
+      bib: Kwon2026
+      design: "forest plot 1.8 'Rectal V100 (mL)', secondary: means (SD, n) as extracted by Kwon; mostly LDR brachytherapy"
+      table: "spacer vs none: Kahn 2020 0.001 (0.001, 40) vs 0.18 (0.25, 40); Lin 2021 0.001 (0.001, 28) vs 0.53 (0.74, 42); Morita 2020 0.026 (0.14, 100) vs 0.318 (0.34, 200); Morita 2024 0.029 (0.37, 394) vs 0.215 (0.45, 337); Nakai 2024 LDR 0.001 vs 0.007 (n 186/186) and LDR+EBRT 0.001 vs 0.031 (70/70); Nehlsen 2021 0.09 (0.148, 22) vs 0.17 (0.289, 146); Teyateeti 2022 0 (0.083, 224) vs 0 (0.167, 139); Whalley 2016 0 (0.13, 30) vs 0 (0.25, 110). Pooled -0.10 (-0.14 to -0.06) mL, I^2 95%"
+      checked: table
+      verified: true
+      secondary: true
+      caveat: "Lin 2021's no-spacer SD is checked against the plotted difference (-0.53, CI -0.75 to -0.31 implies SD about 0.73). Dmax (Kwon 1.1, % of prescription): Butler 2021 33.9 (12.5, 174) vs 51.8 (23, 174); Kahn 2020 60.9 (18.3, 40) vs 107.1 (34.5, 40). Dmean (1.2): Butler 23.8 (8.5, 174) vs 34.2 (15.4, 174)"
+  heterogeneity_warning: >
+    At similar separation, median D2cc is about 20% in the Pd-103-dominated cohorts (Teyateeti, Taggar) and 45.7% in an
+    I-125 cohort (Lin). Prescription also differs (monotherapy vs combination with EBRT). Calibrate with a study-level
+    effect and hold out whole studies.
+
+# ================================================================= HDR dose
+hdr_dose:
+  role: holdout
+  rows:
+    - id: haddad2023_hdr
+      bib: Haddad2023
+      value: "HDR 9 or 11.5 Gy per fraction (232 fractions), spacer 10 mL: rectum D2cm3 about 30% lower and D0.1cm3 about 70% lower than LDR; prostate coverage not improved, larger benefit in smaller prostates"
+      checked: text
+      verified: true
+    - id: honda2025
+      bib: Honda2025
+      value: "28 patients, plans with spacer vs simulated without: dorsal apex V100 100.00 vs 97.10, mid 100.00 vs 97.22; D90 110.15 vs 103.56 (apex), 113.31 vs 106.21 (mid)"
+      checked: text_match
+      verified: false
+    - id: ng2026_hdr
+      bib: Ng2026
+      design: "single 15 Gy HDR fraction, TRUS-guided, n=10 with 3-6 cc HA (placed because prostate-rectal distance < 5 mm) vs n=10 without (distance > 5 mm); topped up to 9 cc after HDR for the later EBRT"
+      table: "mean (SD) with vs without: rectal V75 0.42 (0.25) vs 0.97 (0.34) cc (per patient 0.02-0.83 vs 0.60-1.61); prostate V100 95.62 (0.53) vs 94.48 (0.57)% (p<0.001); V150 31.98 vs 32.29%; V200 10.36 vs 11.61%; urethra D10 112.6 vs 112.7%. Example: 3 cc raised the distance 3.07 -> 7.7 mm (+4.6 mm)"
+      checked: table
+      verified: true
+      caveat: "Not a like-for-like comparison: the spacer group started with the SMALLER separation (< 5 mm), so the benefit is if anything understated. Small n."
+    - id: chao2019_hdr
+      bib: Chao2019
+      design: "HDR 16 Gy in 2 fx (73 pts) or 18 Gy in 3 fx (24 pts) then IMRT 50.4 Gy; 10 mL SpaceOAR (n=32) vs 65 preceding patients"
+      table: "median separation at mid-gland 10 mm (5-14) vs 2 mm (0-5). Median rectal V75 0.45 cc (0-1.46) without vs 0.0 (0-0.22) with a spacer; RTOG 0321 constraint (rectal V75 < 1 cc) met in 100% with vs 93.8% (61/65) without. Median rectal V60 to V80 reduced >=95%; V30 -36% to V50 -77% (cc). Prostate V100 94.9 vs 95.6% (p=0.05, slightly lower with spacer), V150 30.5 vs 33.5% (p=0.03)"
+      checked: table
+      verified: true
+    - id: lee2023_hdr
+      bib: Lee2023
+      design: "salvage whole-gland HDR, 2 x 12 Gy one to two weeks apart; n=20 with (mean 6.2 +/- 3.5 cm3) vs 21 without a spacer; goals: V100 >= 95%, rectal V75% < 1.0 cm3"
+      value: "mean separation at mid-gland 8.0 +/- 2.8 mm; without a spacer all but 3 of 21 were in direct contact (2 with a 1 mm fat plane, 1 with 2.5 mm). Median rectal V75% 0.0 (IQR 0.0-0.0) vs 0.06 (0.0-0.14) cm3; rectal D0.1cc 7.6 (6.8-8.2) vs 9.0 (8.9-9.8) Gy per 12 Gy fraction; D75% 2.3 vs 2.7 Gy; D25% 4.2 vs 4.7 Gy. Prostate V100 98.6 (97.9-99.2) vs 97.8 (97.5-98.2)% (p=0.007). Between-fraction change in spacer volume had no detectable effect on rectal V75 (0.0015 cm3 per cm3, 95% CI -0.0018 to 0.0047)"
+      checked: text   # read from the PMC page in the browser
+      verified: true
+  abstract_only:
+    - {id: beaudry2025, value: "15 Gy boost: separation 7.8 +/- 1.4 vs 4.0 +/- 1.4 mm; D2cc 7.4 vs 9.2 Gy; simulation 0.5-12 mm: >4 mm gave a marked rectal reduction", checked: abstract, verified: false}
+    - {id: wu2017, value: "10 cc PEG: rectal V70 0.09% vs 0.88%, V60 1.16% vs 3.08%", checked: abstract, verified: false}
+  model_note: >
+    The effect of a spacer on target coverage disagrees in sign across HDR sources: slightly lower prostate V100 with a
+    spacer in Chao (94.9 vs 95.6%), slightly higher in Ng (95.6 vs 94.5%) and Lee (98.6 vs 97.8%), unchanged in Haddad,
+    and improved dorsally in Honda (abstract-level). Treat coverage as uncertain and report it that way.
+    The RTOG 0321 rectal constraint (V75 < 1 cc) is informative in HDR with a boost (6.2% fail without a spacer, Chao) but
+    trivially met in salvage HDR (median 0.06 cm3, Lee).
+
+# ================================================================= motion
+rectal_prostate_motion:
+  description: Prostate/rectal-wall position variability. Only two scans per patient, so systematic and random components cannot be separated.
+  role: prior
+  rows:
+    - id: pinkawa2013_motion
+      bib: Pinkawa2013
+      table: "CT1 -> CT2 (10-12 wk) displacement, mean (SD) mm, anterior positive. Prostate centre of mass, y (AP): spacer 1.1 (3.9), 27% > 5 mm; no spacer 1.4 (3.1), 10% > 5 mm. z (cranio-caudal): 1.9 (4.2) vs 0.9 (3.0). Posterior points P1/P2/P3, y: spacer SD 6.3/4.7/4.9; no spacer SD 5.4/7.5/4.8. Systematic posterior displacement > 6.5 mm in 27% of controls vs 0% with spacer (p=0.03)"
+      checked: table
+      verified: true
+      note: "n=15 with spacer, 30 without. Without a spacer, the gap itself shrinks in a quarter of patients, so 'no spacer' is not static either"
+  todo: "Daily or weekly rectal-position data (e.g. per-fraction imaging) are needed to split systematic from random error. Not in DATA_Articles."
+
+  daily_separation_noise:
+    description: Fraction-to-fraction change in prostate to anterior-rectum separation. Without spacers (none of these patients had one).
+    rows:
+      - id: polizzi2024_separation
+        bib: Polizzi2024
+        design: "13 patients, 239 daily treatments, rigid alignment on the prostate ('PR') or the anterior rectum ('AR'); no spacer mentioned anywhere in the paper"
+        value: "77.2% of fractions within +/-5 mm of the patient's average prostate-rectum distance, 3.6% beyond +/-10 mm. Planning anatomy reproducible in 3/13 (23.1%), non-reproducible but favourable in 3/13 (23.1%), unfavourable in 7/13 (53.8%). Average rV95% over fractions differed significantly from planning in 10/13 patients. 'AR' alignment raised rV95% in 34.4% of fractions"
+        checked: text
+        verified: true
+      - id: separation_noise_t_fit
+        derived: true
+        method: "Student-t scale chosen to match the two published quantiles above (P(|d|<=5 mm)=0.772, P(|d|>10 mm)=0.036)"
+        value: "t with 6 degrees of freedom and scale 3.7 mm gives P(|d|>10 mm) = 3.6%. A Gaussian matched to the 5 mm quantile (sigma 4.15 mm) predicts only 1.6% beyond 10 mm, so the tails are heavy"
+        note: "derived here from two numbers, not a published fit; heavy tails matter for the P(worse than planned) estimand"
+  intrafraction_motion:
+    description: Motion within one fraction (minutes). Small next to the daily changes above.
+    rows:
+      - id: hedrick2017_intrafraction
+        bib: Hedrick2017
+        design: "proton therapy, orthogonal x-rays before and after each field; 16 patients with hydrogel (840 fields) vs 10 with an endorectal balloon (662 fields); shifts under 2 mm recorded as zero"
+        table: "mean vector shift 0.09 cm (gel) vs 0.06 cm (balloon), p<0.001; 69% (gel) and 83% (balloon) of shifts were zero. Fields with a vector shift > 0.5 cm: 21/840 (2.5%) gel, 19/662 (2.9%) balloon (p=0.36). Largest shifts anterior-posterior: mean absolute 0.06 cm (gel)"
+        checked: table
+        verified: true
+        caveat: "proton fields; the 2 mm recording threshold hides small shifts"
+      - id: cuccia2020_intrafraction
+        bib: Cuccia2020
+        design: "MR-Linac SBRT 35 Gy/5, 20 patients, 100 fractions; pre- vs post-treatment MRI (median fraction time 50 min); 10 with and 10 without a spacer; median spacer interface 0.99 cm (0.44-1.49)"
+        table: "AP translation SD 0.67 mm (spacer) vs 0.91 mm (none), p=0.07; cranio-caudal SD 1.25 vs 0.46 mm; left-right SD 2.5 mm in both. AP rotation median -0.0005 deg vs 0.09 deg (p=0.033)"
+        checked: table
+        verified: true
+        caveat: "10 patients per arm"
+  abstract_only_candidates:
+    description: Found by search; abstract-level only.
+    rows:
+      - {id: picardi2016, doi: "10.3109/0284186x.2015.1128118", access: paywalled, value: "10 patients with and 10 without spacer, 122 CBCT: group systematic (M), systematic (Sigma) and random (sigma) setup errors, no differences between groups; mean AP displacement 0.6 vs 0.6 mm", checked: abstract, verified: false}
+      - {id: bostel2019, bib: Bostel2019, value: "10 patients, 340 daily in-room CTs, voxel-wise accumulation: daily imaging gives negligible deviations of applied from planned dose; weekly imaging does not. PDF retrieved, body not yet read", checked: abstract, verified: false}
+
+# ================================================================= delivered vs planned dose (validation targets)
+delivered_vs_planned:
+  description: How much delivered rectal dose differs from the planning-CT dose. No spacers. The motion model must reproduce this shift and spread.
+  role: holdout
+  rows:
+    - id: patrick2024_delivered
+      bib: Patrick2024
+      design: "20 SBRT (36.25 Gy in 5 fx) and 20 IMRT (60 Gy in 20 fx) patients, dose recalculated on daily CBCT"
+      value: "average-delivered rectal DVH higher than planned by 7.1% +/- 7.6% (IMRT, whole dose range, p<=0.002) and 5.0 +/- 7.4% (SBRT, 5-15 Gy range, p<=0.021). Posterior wall dose -3.8 +/- 0.6 Gy in IMRT (dose-surface map). 31/40 patients differed significantly by DVH, 18/40 by surface map. Rectal volume differed from planning in 18/20 (IMRT) and 10/20 (SBRT) but explained little (R^2 < 0.13); anterior rectal wall position was the best predictor (R^2 up to 0.52 for V80%). Superior posterior wall shift 5.5 +/- 6.9 mm (IMRT); PTV shift 2.1 +/- 4.2 mm (IMRT) and 0.3 +/- 1.7 mm (SBRT)"
+      checked: text
+      verified: true
+      caveat: "the paper does not say whether '7.1% higher' is a relative or an absolute DVH difference; unresolved"
+    - id: petrikowski2025_delivered
+      bib: Petrikowski2025
+      design: "20 patients, 821 CBCT scans (778 auto-contoured), IGRT; no spacers"
+      value: "daily / planned ratio, median (IQR): rectum Dmean 1.16 (1.02-1.31), bladder Dmean 1.11 (0.89-1.33). Daily rectal volumes were smaller than planned and all daily rectal dose-volume parameters were higher; rectum V50-V70 significantly increased. Rectal Dmean correlated with V50-V70 (r 0.84-0.95)"
+      checked: text
+      verified: true
+    - id: bostel2019_delivered
+      bib: Bostel2019
+      design: "10 patients, 340 daily in-room CTs, deformable voxel-wise dose accumulation, IMRT with 7 mm PTV margin, daily repositioning; no spacers"
+      value: "accumulated rectal Dmean only 0.14 +/- 3.73 Gy above planned and no dose-volume index or NTCP differed significantly (p=0.475); rectal volume change +9.8 +/- 32.3%; CTV displacement after bony realignment: lateral 0.3 +/- 0.3 mm, cranio-caudal 0.4 +/- 0.7, AP -0.6 +/- 0.7 mm (individual patients up to -4.7 to +4.9 mm AP). Weekly rather than daily imaging gave larger deviations"
+      checked: text
+      verified: true
+      finding: "Disagrees with Patrick and Petrikowski, which find delivered > planned. Accumulating dose over fractions averages out what per-fraction analyses see. The validation target is a RANGE from about zero (Bostel) to +16% in Dmean (Petrikowski), depending on whether dose is accumulated."
+  model_note: >
+    Patrick and Petrikowski find delivered rectal dose above planned even with daily image guidance; Bostel, which
+    accumulates dose, finds no significant difference. A motion model that reproduces a
+    spacer's benefit must show the same upward drift in the no-spacer arm. Neither paper includes spacers, so neither says
+    how a spacer changes this.
+
+# ================================================================= planner behaviour
+planner_reprioritisation:
+  description: "Paired before/after-spacer plans are each re-optimised, so they include planner behaviour as well as geometry."
+  role: caveat
+  rows:
+    - id: hamstra2018_secondary
+      bib: Hamstra2018
+      design: "secondary analysis of the pivotal trial, 222 men, median follow-up 37 months. Obtained by the author through their own access"
+      value: "reports NO rectal dose-volume data: the topic is penile bulb dose and sexual quality of life. Penile bulb mean dose 21 vs 11 Gy (control vs spacer), maximum 46 vs 36 Gy, V10-V30 lower (all p<.05); mean dose related to erections sufficient for intercourse (51% below 8 Gy, 40% for 8-24 Gy, 34% above 24 Gy, p=.03). Funded by Augmenix; several authors hold equity, consulted, or provided core-laboratory services"
+      checked: text
+      verified: true
+      finding: "The authors say it is 'unclear why' the spacer lowered penile bulb dose and suggest the inverse optimiser, relieved of the rectal goal, could better serve secondary goals. They also note that more effort on the control arm could have lowered its penile bulb dose, 'partially mitigating' the effect."
+    - id: mariados2015_secondary_organs
+      bib: Mariados2015
+      value: "mean penile bulb dose 18.0 Gy (spacer) vs 22.8 Gy (control), p=.036; spacer-group bladder V70 11.3% before and 11.0% after (no increase)"
+      checked: text
+      verified: true
+  hypothesis: >
+    Susil 2010's shift-only simulation (no re-optimisation) gives an 83% V70 reduction at 10 mm and 100% at 15 mm, whereas
+    the trials' re-optimised plans give 61-79% at about 10-12.6 mm (Song 61% and Whalley 70% from paired plans; Mariados 73% from paired plans; Hamstra 79% against the control arm).
+    Baselines differ (Susil 23% vs 12-13%), so this is not conclusive, but it is consistent with planners spending part of
+    the geometric gain on other goals (penile bulb, conformity: Song's V70 reduction was associated with a change in conformity,
+    p=0.013). Keep the geometry effect (a shift, calibrated on Susil) and the planner effect (the gap) as separate model terms.
+    This is a hypothesis of this project, not a finding of any of these papers.
+
+# ================================================================= planning constraints and estimands
+planning_constraints:
+  description: Clinical objectives. They define what "constraint met" means for an estimand.
+  rows:
+    - id: henry2022_ldr_aims
+      bib: Henry2022
+      table: "I-125 monotherapy, 145 Gy: CTV V100 >=95%, D90 >145 Gy, V150 <=60%; rectum D2cc <=145 Gy (100% of prescription), D0.1cc <200 Gy; urethra D10 <150%, D30 <130%"
+      checked: table   # rendered page 3 and read Table 1
+      verified: true
+    - id: henry2022_hdr_aims
+      bib: Henry2022
+      table: "HDR boost 15 Gy: CTV V100 >95% (14.3 Gy), D90 >100%, V150 <=40% (6 Gy); rectum D2cc <=75 Gy EQD2 (<=10 Gy); urethra D10 <=120 Gy EQD2 (<=17 Gy), D30 <=105 Gy EQD2 (<=15 Gy). EQD2 uses alpha/beta 1.5 Gy for the CTV"
+      checked: table   # rendered page 3 and read Table 2
+      verified: true
+    - id: henry2022_timing
+      bib: Henry2022
+      value: "post-implant dosimetry on day 1, day 2 or at 2-6 weeks, always at the same timing, because prostate swelling and shrinkage can influence the result"
+      checked: text
+      verified: true
+    - id: pederson2012_tiers
+      bib: Pederson2012
+      value: "IMRT, n=296, median 76 Gy, median follow-up 41 mo. Four DVH groups: (V70<=10%, V65<=20%, V40<=40%), (<=15%, <=30%, <=60%), (<=20%, <=40%, <=80%), none. 4-year freedom from grade>=2 GI toxicity 100%, 92%, 92%, 85% (p=0.138). 4-year freedom overall 91% (86-93); 26 men with grade>=2 GI (proctitis 22 events, haemorrhage 21, diarrhoea 5), 7 grade 3. Single-threshold splits: rectal V70 <17% vs >=17%: 94% vs 80% (p=0.0023); V65 >=23% p=0.0128; V75 >=8% p=0.11; V40 >=58% p=0.18. Multivariate: age RR 1.07/yr (p=0.018), rectal V70 RR 1.03 (p=0.074)"
+      checked: text
+      verified: true
+      note: "the effect is modest and borderline: do not treat the tiers as sharp thresholds. The abstract merges the middle two groups (92%)"
+  implication: >
+    In brachytherapy the observed rectal doses sit far below these objectives (LDR D2cc 19.9-47.0% against a 100% limit,
+    Teyateeti 2022; HDR D2cc 7.4-9.2 Gy against 10 Gy, Beaudry 2025 abstract), so P(constraint met) is close to 1 with or
+    without a spacer and tells us little. For brachytherapy use dose headroom and dose distributions instead. For EBRT the
+    Pederson tiers are informative: Whalley's paired plans cross the V70 <=10% line (12.3% without, 3.7% with).
+
+# ================================================================= SBRT: geometry to dose
+sbrt_geometry_dose:
+  role: calibrate
+  rows:
+    - id: grossman2023_sbrt
+      bib: Grossman2023
+      design: "n=42 (35 UTSW, 7 MSK), 45 Gy in 5 fx, PEG hydrogel. Score 0/1/2 for interspace <0.3 / 0.3-0.9 / >=1 cm at midline and +/-1 cm laterally, at base, midgland and apex"
+      value: "all had >=0.3 cm at midgland; spacer quality score 0/1/2 in 17% / 40% / 43%. Rectal D1cc median 3337.5 cGy (range 1473-4620), mean 3370 (SD 783); mean V45 0.2 cc (SD 0.4). Dmax median: score 2 3921 cGy vs score 0 4683, score 1 4576. Regression against score 2: Dmax +517.5 cGy (score 0; 95% CI 123-912) and +661.8 (score 1; 363-961); D1cc +894.3 (score 0; 300-1488) and +798.3 (score 1; 347-1249). Late rectal toxicity 20/42 (48%): 14 grade 1, 6 grade 2, none >=3, median follow-up 48 mo"
+      checked: text
+      verified: true
+
+# (Hwang 2018's dose results sit with its geometry above; the explained-variance numbers are here)
+sbrt_geometry_variance:
+  role: calibrate
+  rows:
+    - id: hwang2018_sbrt_dose
+      bib: Hwang2018
+      design: "n=20, SpaceOAR, 36.25 Gy in 5 fx; regression of rectal dose against geometry"
+      value: "R^2 of rectal dose against perirectal distance at the CTV centre: rDmax 1/2/3 cc 0.44/0.45/0.42; rV95/V90/V80 0.60/0.55/0.27. Against gel volume alone: 0.23/0.22/0.18 and 0.20/0.14/0.04. Against normalised (angle theta x gel volume): 0.64/0.62/0.55 and 0.60/0.52/0.25. Lateral asymmetry <2 cm did not change rDmax 1 cc, but no gel in the inferior slice raised it by 171 cGy (p<0.005). RTOG 0938 constraints met in 18/20. Acute rectal toxicity 30% (grade 1-2), resolved within weeks"
+      checked: text
+      verified: true
+      finding: "One separation measurement explains only about 45-60% of SBRT rectal dose variance (27% for V80). That is a ceiling for a geometry-only model: if the Monte Carlo explains much more than this, it is overfitting. Absence of gel at the apex matters more than lateral asymmetry."
+
+# ================================================================= placement quality varies by centre
+placement_variability:
+  description: How often placement is poor, by centre. A study-level random effect for the sampler.
+  rows:
+    - id: bendor2025_symmetry
+      bib: BenDor2025
+      design: "n=67 (33 balloon, 34 PEG), EBRT, symmetry graded on axial CT with the Fischer-Valuck scheme"
+      value: "PEG: SYM-1 5/34 (14.7%), SYM-2-3 21 (61.8%), SYM-4-5 8 (23.5%); no spacer at the apex 8.8% (3/34), midgland 0%, base 17.6%; centred placement at apex / mid / base 44.1% / 52.9% / 35.3%; PEG volume 9.9 +/- 4.3 cc"
+      checked: text
+      verified: true
+    - id: prusty2025_volume
+      bib: Prusty2025
+      design: "multicentre retrospective, n=822 (346 SpaceOAR, 309 Barrigel, 167 none), 2017-2023; 20 fx 61%, 39 fx 20%, 5 fx 15%; 605 scored for insertion quality by two observers"
+      value: "median gel volume 13.80 cc (IQR 11.82-15.82) SpaceOAR vs 5.10 cc (3.10-6.4) Barrigel; median rectal volume 64.3 cc. Higher spacer quality score (SQS, interspace thickness at base/mid/apex, midline and +/-1 cm) went with lower rectal volumes at every dose level v30-v60 in both 20-fx and 5-fx groups (Jonckheere-Terpstra p<0.05); the Fischer-Valuck symmetry score showed NO association with dose at any level in the 20-fx group. Observer agreement: kappa 0.83 and 0.91 (SQS) vs 0.61 (Fischer-Valuck). SpaceOAR more likely to reach a higher SQS (odds ratio 6.25 for 5 fx, 2.16 for >5 fx). Rectal wall infiltration 7/287 (2.44%) with SpaceOAR, none with Barrigel"
+      checked: text
+      verified: true
+      finding: "A per-location THICKNESS score predicts dose where a symmetry category does not. Represent the spacer as a thickness profile, as in Grossman 2023's score."
+    - id: grossman2024_rwi
+      bib: Grossman2024
+      design: "the 149 spacer-arm patients of the US pivotal trial, post-implant T2 MRI, rectal-wall-infiltration (RWI) depth score 0-3"
+      value: "62.4% no rectal wall signal change; RWI (score 2 or 3) in 24% (20.1% partial, 4.0% full-thickness); full-thickness RWI had longer (22.8 +/- 7.0 mm) and wider (35.8 +/- 9.2% circumference) infiltration; no association with acute (p=0.64) or late (p=0.85) rectal toxicity to 15 months"
+      checked: text
+      verified: true
+      discrepancy: "Fischer-Valuck reports RWI in 6.0% of the same 149 patients; the two papers use different scoring (this one counts partial infiltration). A safety measure, not a dose input."
+  comparison: >
+    Perfect symmetry was 49.0% in Fischer-Valuck (MRI-scored, trial centres) but 14.7% for PEG in Ben-Dor (CT-scored,
+    single centre), while severe asymmetry (SYM-4-5) was similar (20.1% vs 23.5%). Operator, centre and scoring modality
+    (PEG is faint on CT) all differ, so placement quality is a study-level effect, not a constant.
+
+# ================================================================= radiobiology
+lkb_rectum:
+  description: Lyman-Kutcher-Burman parameters, late rectal toxicity (EBRT, mostly 3D-CRT era)
+  role: prior
+  rows:
+    - id: michalski2010
+      bib: Michalski2010
+      value: "n = 0.09 (0.04-0.14); m = 0.13 (0.10-0.17); TD50 = 76.9 (73.7-80.1) Gy. Authors warn IMRT or proton distributions may need modified models"
+      checked: text_match
+      verified: false
+  abstract_only:
+    - {id: gulliford2012, endpoint: "G2 bleeding, MRC-RT01", n: 0.13, m: 0.15, TD50: "68.5 Gy", checked: abstract, verified: false}
+    - {id: rancati2004, endpoint: "G2/3 bleeding", n: 0.23, m: 0.19, TD50: "81.9 Gy", checked: abstract, verified: false}
+    - {id: liu2010, endpoint: "G>2 bleeding", n: 0.068, m: 0.14, TD50: "81 Gy", note: "AUC 0.62", checked: abstract, verified: false}
+    - {id: fatyga2015, endpoint: "G2+ late, IMRT, EQD2 alpha/beta 3 Gy", n: 0.26, m: 0.25, TD50: "81.53 Gy", checked: abstract, verified: false}
+    - {id: ong2022, endpoint: "G>=2 late GI, VMAT", D50: "77.9 Gy", checked: abstract, verified: false}
+  model_note: "Fits disagree (TD50 68.5-81.9 Gy, n 0.07-0.26). Sample them and report NTCP as ranges. Do not use for proton or carbon-ion plans."
+
+toxicity_anchors:
+  description: Observed toxicity with vs without spacer. Weak constraints only (wide intervals).
+  role: holdout
+  rows:
+    - id: miller2020_tox
+      bib: Miller2020
+      table: "late grade>=2 rectal toxicity 1.5% vs 5.7%, RR 0.23 (0.06-0.99), 4 studies; per-study RR: Mariados 0.05 (0.00-0.92), Pinkawa 0.06 (0.00-0.92), te Velde 0.46 (0.04-4.91), Whalley 0.92 (0.11-7.90); late any-grade 4.8% vs 16.2%, RR 0.38"
+      checked: table
+      verified: true
+    - id: wong2025_tox
+      bib: Wong2025
+      design: "17 studies (3 RCTs, 3 prospective, 11 retrospective), 3,200 patients (1,471 spacer, 1,729 none), random effects"
+      value: "late grade>=2 rectal toxicity 1.62% vs 9.35%, RR 0.25 (95% CI 0.15-0.42); early (<=3 mo) grade>=2 3.07% vs 6.05%, RR 0.53 (0.33-0.86); no difference in grade>=3; most outcomes I^2 < 30%"
+      checked: text
+      verified: true
+      finding: "Tighter than Miller 2020's RR 0.23 (0.06-0.99). A usable constraint on the NTCP layer: predicted late risk ratio should fall inside 0.15-0.42."
+    - id: hamstra2017_tox
+      bib: Hamstra2017
+      value: "3-year grade 2 rectal toxicity 6% (control) vs 0% (spacer); grade 1 9% vs 2%"
+      checked: text
+      verified: true
+    - id: sadeghi2025
+      bib: Sadeghi2025
+      value: "prostate brachytherapy: spacers lowered rectal dose metrics by ~15-50%; grade>=2 GI toxicity RR ~0.42 (pooled, all brachytherapy sites)"
+      checked: abstract
+      verified: false
+
+# ================================================================= not literature values
+placeholders:
+  - sigma_p_mm        # dose penumbra width: calibrate to ebrt_dvh_paired (V30-V82 profile)
+  - sigma_sys_mm      # systematic rectal offset: only partially constrained by pinkawa2013_motion
+  - sigma_rand_mm     # daily rectal motion: needs per-fraction data
+  - seed_loading      # LDR template plan: source from implant protocols (Henry 2022 GEC-ESTRO is in DATA_Articles, not yet read)
+
+# ================================================================= papers retrieved and papers still needed
+retrieved_open_access:
+  description: "Retrieved separately (open access or PMC author manuscript). Read only; no copies are kept in this repo. Identity checked: each file contains its own DOI."
+  rows:
+    - {bib: Bjoreland2023, doi: "10.1186/s13014-022-02197-x", licence: "CC BY", how: "Europe PMC full-text XML (PDF endpoints returned 403)", read: "results", note: "Published lead author is Björeland; an earlier citation listed it as 'Notstam 2022'. Notstam is the second author."}
+    - {bib: Ng2026, doi: "10.1002/acm2.70701", licence: "CC BY", how: "Europe PMC full-text XML", read: "results and tables"}
+    - {bib: Chao2019, doi: "10.5114/jcb.2019.82836", licence: "CC BY-NC-SA", how: "PDF from the journal", read: "results and tables"}
+    - {bib: Taggar2018, doi: "10.1016/j.brachy.2017.11.006", licence: "PMC author manuscript (no CC licence)", how: "read on the PMC page in the browser; nothing saved", read: "full text"}
+    - {bib: Lee2023, doi: "10.1016/j.brachy.2023.06.003", licence: "PMC author manuscript (no CC licence)", how: "read on the PMC page in the browser; nothing saved", read: "results"}
+    - {bib: Polizzi2024, doi: "10.1002/acm2.14241", licence: "CC BY", how: "Europe PMC full-text XML", read: "results"}
+    - {bib: Patrick2024, doi: "10.1002/acm2.14314", licence: "CC BY", how: "PDF from Europe PMC", read: "results"}
+    - {bib: Petrikowski2025, doi: "10.3390/cancers17071194", licence: "CC BY", how: "Europe PMC full-text XML", read: "results"}
+    - {bib: Bostel2019, doi: "10.3389/fonc.2019.00940", licence: "CC BY", how: "PDF from the journal", read: "results"}
+    - {bib: Cuccia2020, doi: "10.1186/s13014-020-01622-3", licence: "CC BY", how: "Europe PMC full-text XML", read: "results"}
+    - {bib: Hedrick2017, doi: "10.1002/acm2.12051", licence: "CC BY", how: "Europe PMC full-text XML", read: "results"}
+    - {bib: Hwang2018, doi: "10.1186/s13014-018-1135-6", licence: "CC BY", how: "Europe PMC full-text XML", read: "results and tables"}
+    - {bib: Kubo2021, doi: "10.1186/s13256-021-02864-9", licence: "CC BY", how: "Europe PMC full-text XML", read: "full text"}
+    - {bib: Susil2010, doi: "10.1016/j.ijrobp.2009.07.1679", licence: "PMC author manuscript (no CC licence)", how: "read on the PMC page in the browser; nothing saved", read: "results"}
+    - {bib: Song2013, doi: "10.1016/j.ijrobp.2012.12.019", licence: "PMC author manuscript (no CC licence)", how: "read on the PMC page in the browser; nothing saved", read: "results and tables"}
+
+needs_pdf:
+  reason: "Full text would replace second-hand or abstract-level numbers. A search of PDF contents found none of these in the local collection (hits were textbooks and papers that cite them). Full citations with titles: docs/PAPERS_NEEDED.md. Official titles and DOIs come from Crossref."
+  rows:
+    - {tier: 1, paper: "Agrawal 2026", doi: "10.1016/j.brachy.2026.02.005", access: "paywalled", why: "LDR comparison of HA, PEG and balloon spacers; LDR calibration"}
+    - {tier: 1, paper: "Beaudry 2026", doi: "10.1016/j.brachy.2025.08.009", access: "paywalled", why: "only HDR separation sweep (0.5-12 mm); HDR hold-out"}
+    - {tier: 1, paper: "Heikkilä 2014", doi: "10.1016/j.radonc.2014.08.012", access: "paywalled", why: "separation half-life 110 d vs gel-volume half-life 47 d (primary source for Vaggers' second-hand figures)"}
+    - {tier: 1, paper: "Kahn 2020", doi: "10.1016/j.brachy.2019.11.002", access: "paywalled", why: "LDR I-125 dose vs separation (13.9 vs 6.5 mm); LDR calibration"}
+    - {tier: 2, paper: "Gulliford 2012", doi: "10.1016/j.radonc.2011.10.022", access: "paywalled", why: "rectal LKB parameters"}
+    - {tier: 2, paper: "Koduri 2026", doi: "10.1016/j.prro.2026.05.015", access: "paywalled", why: "PEG kinetics over a 5-fraction SBRT course (MR-Linac, n=198)"}
+    - {tier: 2, paper: "Liu 2020", doi: "10.1016/j.prro.2020.02.006", access: "paywalled", why: "spacer quality score matched-pair dosimetry"}
+    - {tier: 2, paper: "Morita 2019", doi: "10.1111/iju.14123", access: "paywalled", why: "LDR I-125 with spacer immediately after implant, prostate deformation; n=100 vs 200"}
+    - {tier: 2, paper: "Nehlsen 2021", doi: "10.1016/j.brachy.2020.09.018", access: "paywalled", why: "LDR + EBRT, rectal V100 0.09 vs 0.17 cc"}
+    - {tier: 2, paper: "Picardi 2016", doi: "10.3109/0284186x.2015.1128118", access: "paywalled", why: "systematic and random errors of interfraction prostate motion with and without spacer"}
+    - {tier: 2, paper: "Pinkawa 2016", doi: "10.1007/s00066-016-1040-6", access: "paywalled", why: "primary Pinkawa 2017 study in Miller's forest plot (V70 20% vs 32%)"}
+    - {tier: 2, paper: "Rancati 2004", doi: "10.1016/j.radonc.2004.08.013", access: "paywalled", why: "rectal LKB parameters"}
+    - {tier: 2, paper: "Wolf 2015", doi: "10.1016/j.radonc.2015.07.027", access: "paywalled", why: "EBRT, Miller forest entry (V70-closest)"}
+    - {tier: 2, paper: "Wu 2018", doi: "10.1016/j.brachy.2017.10.014", access: "paywalled", why: "HDR (10 cc PEG) rectal V60-V80; HDR hold-out"}
+    - {tier: 2, paper: "te Velde 2017", doi: "10.1111/1754-9485.12580", access: "paywalled", why: "te Velde 2017 (Kwon's V100 row looks mis-extracted from Taggar)"}
+    - {tier: 2, paper: "te Velde 2019", doi: "10.1111/1754-9485.12945", access: "paywalled", why: "EBRT V75 (7.4 -> 2.1%) at 81 Gy; Miller forest entry"}
+  corrections:
+    - "Morita 2020: the DOI first recorded (10.1111/iju.14209) was the Ghaffari letter replying to it; the paper is 10.1111/iju.14123."

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+.DS_Store
+# Source papers are cited by DOI and never redistributed here.
+*.pdf
