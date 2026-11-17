@@ -1,8 +1,29 @@
-# spacer-mc
+<div align="center">
 
-Monte Carlo uncertainty propagation for **hydrogel rectal-spacer dose sparing in prostate radiotherapy**: photon external beam, LDR brachytherapy and HDR brachytherapy.
+# spacer-mc 🎯🔬
 
+**Monte Carlo Uncertainty Propagation for Hydrogel Rectal-Spacer Dose Sparing in Prostate Radiotherapy**  
+*Sourced 73-paper evidence base, random-effects meta-analytic pooling, and uncertainty propagation across EBRT, LDR, and HDR brachytherapy*
+
+[![CI](https://github.com/callmesobhan/spacer-mc/actions/workflows/ci.yml/badge.svg)](https://github.com/callmesobhan/spacer-mc/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-indigo.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![Modalities](https://img.shields.io/badge/Regimes-Photon%20EBRT%20%7C%20LDR%20%7C%20HDR%20Brachy-10b981)](#the-question)
+
+</div>
+
+> [!WARNING]
 > **Research and teaching code. Not for clinical use.** Nothing here has been validated for treatment decisions.
+
+## Model Layers & Architecture
+
+```mermaid
+flowchart LR
+    A["📚 Evidence Base (data/priors.yaml • 73 Papers)"] --> B["Layer 1: Achieved Separation & Asymmetry"]
+    B --> C["Layer 2: Inter-Fraction Motion & Hydrogel Kinetics (PEG vs HA)"]
+    C --> D["Layer 3: Isotope Decay Clock (EBRT / I-125 / Pd-103 / Ir-192)"]
+    D --> E["Rectal Dose Distribution (V70 / D2cc) & NTCP Confidence"]
+```
 
 ## Status: early
 
