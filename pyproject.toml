@@ -7,7 +7,7 @@ name = "spacer-mc"
 version = "0.2.0"
 description = "4D Monte Carlo uncertainty propagation for hydrogel rectal-spacer dose sparing in prostate radiotherapy"
 readme = "README.md"
-license = {text = "MIT"}
+license = {file = "LICENSE"}
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.26", "scipy>=1.11"]
 

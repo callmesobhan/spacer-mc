@@ -6,7 +6,7 @@
 *Sourced 73-paper evidence base, random-effects meta-analytic pooling, and uncertainty propagation across EBRT, LDR, and HDR brachytherapy*
 
 [![CI](https://github.com/callmesobhan/spacer-mc/actions/workflows/ci.yml/badge.svg)](https://github.com/callmesobhan/spacer-mc/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-indigo.svg)](LICENSE)
+[![License: Non-Commercial (Research & Personal)](https://img.shields.io/badge/License-Non--Commercial%20(Research%20%26%20Personal)-f59e0b.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![Modalities](https://img.shields.io/badge/Regimes-Photon%20EBRT%20%7C%20LDR%20%7C%20HDR%20Brachy-10b981)](#the-question)
 
@@ -118,4 +118,4 @@ See [DESIGN.md](DESIGN.md) section 11. In short: EBRT calibration (M2), then LDR
 
 ## Sources and licensing
 
-The papers themselves are **not** in this repository and are not redistributed. The repo holds extracted numbers with citations, so each can be traced to its source by DOI. Check the licence of any paper before reusing a figure from it. The code and original text are MIT licensed ([LICENSE](LICENSE)).
+The papers themselves are **not** in this repository and are not redistributed. The repo holds extracted numbers with citations, so each can be traced to its source by DOI. Check the licence of any paper before reusing a figure from it. The code and original text are released under the **Non-Commercial Personal & Academic Research License (NC-PARL 1.0)** ([LICENSE](LICENSE)): free for personal use and non-commercial research with citation (`Sobhan Shahbazi (2026). spacer-mc. https://github.com/callmesobhan/spacer-mc`); commercial use is prohibited without a written license.
