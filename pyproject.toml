@@ -4,12 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spacer-mc"
-version = "0.0.1"
-description = "Monte Carlo uncertainty propagation for rectal-spacer dose sparing in prostate radiotherapy"
+version = "0.2.0"
+description = "4D Monte Carlo uncertainty propagation for hydrogel rectal-spacer dose sparing in prostate radiotherapy"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.26", "scipy>=1.11"]
+
+[project.scripts]
+spacer-mc = "spacer_mc.cli:main"
 
 [project.optional-dependencies]
 sensitivity = ["SALib>=1.5"]

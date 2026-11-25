@@ -25,15 +25,36 @@ flowchart LR
     D --> E["Rectal Dose Distribution (V70 / D2cc) & NTCP Confidence"]
 ```
 
-## Status: early
+## Status: v0.2 — 4D Resorption x Isotope-Decay Decision Engine
 
-This repository currently holds three things, and only the first two are substantial:
+Commercial treatment-planning systems (Eclipse, RayStation, VariSeed, Oncentra Brachy) evaluate post-injection hydrogel spacer geometry as **frozen in time**. `spacer-mc` propagates coupled **4D hydrogel resorption kinetics (PEG vs HA vs DuraSeal vs Balloon) x brachytherapy isotope decay clocks (I-125 vs Pd-103 vs Cs-131 vs Ir-192) x post-implant oedema decay x heavy-tailed daily rectal motion** to quantify the **Hidden Resorption Penalty** and solve the inverse clinical problem: *what minimum post-injection separation is required for 95% confidence of meeting a rectal constraint?*
 
-1. **A design** ([DESIGN.md](DESIGN.md)): the question, the model layers, the validation plan, the milestones and the risks.
-2. **A sourced evidence base** ([data/priors.yaml](data/priors.yaml), 73 papers in [refs/references.bib](refs/references.bib)): published numbers on spacer geometry, spacer kinetics, rectal dose with and without a spacer, and radiobiology, each tied to a paper and marked by how it was checked.
-3. **A small tested spike** (`src/spacer_mc`): a 1-D uncertainty sampler checked against a closed-form result, and a random-effects pooling routine that reproduces a published meta-analysis from its own forest-plot values.
+What this repository ships:
 
-**The full simulation is not built yet.** Calibration against the published data (milestone M2) has not started.
+1. **Sourced evidence base** ([data/priors.yaml](data/priors.yaml), 73 papers in [refs/references.bib](refs/references.bib)): 92 evidence rows tied to DOIs and checked by provenance level (`table`/`text`/`abstract`).
+2. **4D Monte Carlo & TG-43 / EBRT engine** (`src/spacer_mc`):
+   - `kinetics.py`: 3-phase PEG kinetics (Mariados 2015, Uhl 2014, Kubo 2021), early-drop + plateau HA kinetics (Björeland 2023), DuraSeal rapid separation decay (Vaggers 2021), LDR prostate oedema resolution (Haddad 2023), and exact radioactive decay quadrature (King 2021).
+   - `geometry.py`: 3-D anterior-posterior rectal volume mesh with per-level `(apex, mid, base)` spacer profiles (Pinkawa 2013, Prusty 2025), lateral taper (Hwang 2018), apex-failure tail (Ben-Dor 2025), and heavy-tailed Student-*t* daily motion (Polizzi 2024).
+   - `dose.py` & `radbio.py`: calibrated dual-component EBRT gradient (Susil 2010 / Whalley 2016), 3-D AAPM TG-43 seed/dwell superposition (`I-125`, `Pd-103`, `Cs-131`, `Ir-192`), DVH metrics (`V70`, `D2cc`, `D1cc`, `V75`), EQD2, and LKB NTCP (checked against Wong 2025).
+   - `decision.py` & `cli.py`: paired no-spacer vs static-TPS vs 4D-delivered Monte Carlo (`simulate_4d`), inverse 95%-confidence required-separation maps (`solve_required_separation`), and the cross-regime/material clock comparison matrix (`compare_clock_matrix`).
+
+### Quickstart (CLI & Python)
+
+```bash
+pip install -e ".[dev]"
+
+# Compare hidden 4D resorption penalties across EBRT, SBRT, I-125, Pd-103, Cs-131, HDR and PEG/HA/DuraSeal
+spacer-mc compare-clocks
+
+# Patient-specific 4D risk check from post-injection apex / mid / base thickness (mm)
+spacer-mc simulate --regime ldr_i125 --material PEG --apex 8 --mid 10 --base 12
+
+# Inverse clinical question: static TPS vs true 4D required separation for 95% confidence
+spacer-mc required-separation --regime ldr_i125 --material PEG --confidence 0.95
+
+# Verify calibrated 4D physics against 7 published literature benchmarks
+spacer-mc validate
+```
 
 ## The question
 
